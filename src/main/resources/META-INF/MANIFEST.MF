@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+Created-By: Inversoft
+Savant-Plugin-Class: org.savantbuild.plugin.java.JavaPlugin
+
