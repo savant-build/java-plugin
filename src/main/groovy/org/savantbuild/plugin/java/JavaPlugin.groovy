@@ -148,10 +148,7 @@ class JavaPlugin extends BaseGroovyPlugin {
 
     filePlugin.jar(jarFilePath) {
       directories.each { dir ->
-        output.debug("Inspecting directory [${dir}] for JAR file")
-        if (Files.isDirectory(project.directory.resolve(dir))) {
-          fileSet(dir)
-        }
+        optionalFileSet(dir)
       }
     }
   }
