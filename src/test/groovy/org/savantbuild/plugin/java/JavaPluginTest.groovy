@@ -14,6 +14,7 @@
  * language governing permissions and limitations under the License.
  */
 package org.savantbuild.plugin.java
+
 import org.savantbuild.dep.domain.*
 import org.savantbuild.dep.workflow.FetchWorkflow
 import org.savantbuild.dep.workflow.PublishWorkflow
@@ -32,9 +33,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.jar.JarFile
 
-import static org.testng.Assert.assertFalse
-import static org.testng.Assert.assertNotNull
-import static org.testng.Assert.assertTrue
+import static org.testng.Assert.*
 
 /**
  * Tests the Java plugin.

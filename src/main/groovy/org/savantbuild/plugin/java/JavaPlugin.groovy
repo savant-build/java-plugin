@@ -14,12 +14,9 @@
  * language governing permissions and limitations under the License.
  */
 package org.savantbuild.plugin.java
-
-import org.savantbuild.dep.DependencyService.ResolveConfiguration
 import org.savantbuild.dep.domain.ArtifactID
 import org.savantbuild.domain.Project
 import org.savantbuild.io.FileTools
-import org.savantbuild.lang.Classpath
 import org.savantbuild.output.Output
 import org.savantbuild.plugin.dep.DependencyPlugin
 import org.savantbuild.plugin.file.FilePlugin
@@ -30,7 +27,6 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.function.Function
 import java.util.function.Predicate
-
 /**
  * The Java plugin. The public methods on this class define the features of the plugin.
  */
@@ -69,7 +65,7 @@ class JavaPlugin extends BaseGroovyPlugin {
    */
   void compileMain() {
     initialize()
-    compile(layout.mainSourceDirectory, layout.mainBuildDirectory, settings.mainDependencyResolveConfiguration)
+    compile(layout.mainSourceDirectory, layout.mainBuildDirectory, settings.mainDependencies)
     copyResources(layout.mainResourceDirectory, layout.mainBuildDirectory)
   }
 
@@ -78,7 +74,7 @@ class JavaPlugin extends BaseGroovyPlugin {
    */
   void compileTest() {
     initialize()
-    compile(layout.testSourceDirectory, layout.testBuildDirectory, settings.testDependencyResolveConfiguration, layout.mainBuildDirectory)
+    compile(layout.testSourceDirectory, layout.testBuildDirectory, settings.testDependencies, layout.mainBuildDirectory)
     copyResources(layout.testResourceDirectory, layout.testBuildDirectory)
   }
 
@@ -87,9 +83,9 @@ class JavaPlugin extends BaseGroovyPlugin {
    *
    * @param sourceDirectory The source directory that contains the Java source files.
    * @param buildDirectory The build directory to compile the Java files to.
-   * @param resolveConfiguration The ResolveConfiguration for building the classpath from the project's depenedencies.
+   * @param dependencies The dependencies to resolve and include on the compile classpath.
    */
-  void compile(Path sourceDirectory, Path buildDirectory, ResolveConfiguration resolveConfiguration, Path... additionalClasspath) {
+  void compile(Path sourceDirectory, Path buildDirectory, List<Map<String, Object>> dependencies, Path... additionalClasspath) {
     Path resolvedSourceDir = project.directory.resolve(sourceDirectory)
     Path resolvedBuildDir = project.directory.resolve(buildDirectory)
 
@@ -106,7 +102,7 @@ class JavaPlugin extends BaseGroovyPlugin {
 
     output.info "Compiling [${filesToCompile.size()}] Java classes from [${sourceDirectory}] to [${buildDirectory}]"
 
-    String command = "${javacPath} ${settings.compilerArguments} ${classpath(resolveConfiguration, additionalClasspath)} -sourcepath ${sourceDirectory} -d ${buildDirectory} ${filesToCompile.join(" ")}"
+    String command = "${javacPath} ${settings.compilerArguments} ${classpath(dependencies, additionalClasspath)} -sourcepath ${sourceDirectory} -d ${buildDirectory} ${filesToCompile.join(" ")}"
     Files.createDirectories(resolvedBuildDir)
     Process process = command.execute(null, project.directory.toFile())
     process.consumeProcessOutput((Appendable) System.out, System.err)
@@ -126,9 +122,8 @@ class JavaPlugin extends BaseGroovyPlugin {
    * @param buildDirectory The build directory to copy the files to.
    */
   void copyResources(Path sourceDirectory, Path buildDirectory) {
-    filePlugin.copy {
-      to(buildDirectory)
-      fileSet(sourceDirectory)
+    filePlugin.copy(to: buildDirectory) {
+      fileSet(dir: sourceDirectory)
     }
   }
 
@@ -146,18 +141,18 @@ class JavaPlugin extends BaseGroovyPlugin {
 
     output.info "Creating JAR [${jarFile}]"
 
-    filePlugin.jar(jarFilePath) {
+    filePlugin.jar(file: jarFilePath) {
       directories.each { dir ->
-        optionalFileSet(dir)
+        optionalFileSet(dir: dir)
       }
     }
   }
 
-  private String classpath(ResolveConfiguration resolveConfiguration, Path... additionalPaths) {
-    Classpath classpath = dependencyPlugin.classpath(resolveConfiguration) {
-      paths(additionalPaths)
-    }
-    return classpath.toString("-classpath ")
+  private String classpath(List<Map<String, Object>> dependenciesList, Path... additionalPaths) {
+    return dependencyPlugin.classpath{
+      dependenciesList.each { deps -> dependencies(deps) }
+      additionalPaths.each { additionalPath -> path(location: additionalPath) }
+    }.toString("-classpath ")
   }
 
   private void initialize() {

@@ -14,21 +14,19 @@
  * language governing permissions and limitations under the License.
  */
 package org.savantbuild.plugin.java
-
-import static org.savantbuild.dep.DependencyService.ResolveConfiguration.*
-import static org.savantbuild.dep.DependencyService.ResolveConfiguration
-
 /**
  * Settings class that defines the settings used by the Java plugin.
  */
 class JavaSettings {
   String javaVersion
   String compilerArguments = ""
-  ResolveConfiguration mainDependencyResolveConfiguration = new ResolveConfiguration()
-      .with("compile", new TypeResolveConfiguration(true, false))
-      .with("provided", new TypeResolveConfiguration(true, false))
-  ResolveConfiguration testDependencyResolveConfiguration = new ResolveConfiguration()
-      .with("compile", new TypeResolveConfiguration(true, false))
-      .with("test-compile", new TypeResolveConfiguration(true, false))
-      .with("provided", new TypeResolveConfiguration(true, false))
+  List<Map<String, Object>> mainDependencies = [
+      [group: "compile", transitive: false, fetchSource: false],
+      [group: "provided", transitive: false, fetchSource: false]
+  ]
+  List<Map<String, Object>> testDependencies = [
+      [group: "compile", transitive: false, fetchSource: false],
+      [group: "test-compile", transitive: false, fetchSource: false],
+      [group: "provided", transitive: false, fetchSource: false]
+  ]
 }
