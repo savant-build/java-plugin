@@ -65,7 +65,7 @@ class JavaPlugin extends BaseGroovyPlugin {
    */
   void compileMain() {
     initialize()
-    compile(layout.mainSourceDirectory, layout.mainBuildDirectory, settings.mainDependencies)
+    compile(layout.mainSourceDirectory, layout.mainBuildDirectory, settings.mainDependencies, layout.mainBuildDirectory)
     copyResources(layout.mainResourceDirectory, layout.mainBuildDirectory)
   }
 
@@ -74,7 +74,7 @@ class JavaPlugin extends BaseGroovyPlugin {
    */
   void compileTest() {
     initialize()
-    compile(layout.testSourceDirectory, layout.testBuildDirectory, settings.testDependencies, layout.mainBuildDirectory)
+    compile(layout.testSourceDirectory, layout.testBuildDirectory, settings.testDependencies, layout.mainBuildDirectory, layout.testBuildDirectory)
     copyResources(layout.testResourceDirectory, layout.testBuildDirectory)
   }
 

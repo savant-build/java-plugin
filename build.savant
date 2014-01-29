@@ -28,7 +28,7 @@ project(group: "org.savantbuild.plugin", name: "java", version: "0.1.0", license
       dependency(id: "org.savantbuild.plugin:file:0.1.0-{integration}")
       dependency(id: "org.savantbuild.plugin:dependency:0.1.0-{integration}")
     }
-    group(type: "test-compile") {
+    group(type: "test-compile", export: false) {
       dependency(id: "org.testng:testng:6.8.7")
     }
   }
