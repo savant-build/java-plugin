@@ -14,6 +14,7 @@
  * language governing permissions and limitations under the License.
  */
 package org.savantbuild.plugin.java
+
 /**
  * Settings class that defines the settings used by the Java plugin.
  */
