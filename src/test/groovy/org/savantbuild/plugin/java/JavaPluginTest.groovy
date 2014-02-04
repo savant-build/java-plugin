@@ -31,7 +31,9 @@ import org.testng.annotations.Test
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.jar.JarEntry
 import java.util.jar.JarFile
+import java.util.jar.JarInputStream
 
 import static org.testng.Assert.*
 
@@ -95,17 +97,47 @@ class JavaPluginTest {
     plugin.jar()
     assertTrue(Files.isRegularFile(projectDir.resolve("test-project/build/jars/test-project-1.0.0.jar")))
     assertJarContains(projectDir.resolve("test-project/build/jars/test-project-1.0.0.jar"), "org/savantbuild/test/MyClass.class", "main.txt")
+    assertJarFileEquals(projectDir.resolve("test-project/build/jars/test-project-1.0.0.jar"), "org/savantbuild/test/MyClass.class", projectDir.resolve("test-project/build/classes/main/org/savantbuild/test/MyClass.class"))
     assertTrue(Files.isRegularFile(projectDir.resolve("test-project/build/jars/test-project-1.0.0-src.jar")))
     assertJarContains(projectDir.resolve("test-project/build/jars/test-project-1.0.0-src.jar"), "org/savantbuild/test/MyClass.java", "main.txt")
+    assertJarFileEquals(projectDir.resolve("test-project/build/jars/test-project-1.0.0-src.jar"), "org/savantbuild/test/MyClass.java", projectDir.resolve("test-project/src/main/java/org/savantbuild/test/MyClass.java"))
     assertTrue(Files.isRegularFile(projectDir.resolve("test-project/build/jars/test-project-test-1.0.0.jar")))
     assertJarContains(projectDir.resolve("test-project/build/jars/test-project-test-1.0.0.jar"), "org/savantbuild/test/MyClassTest.class", "test.txt")
+    assertJarFileEquals(projectDir.resolve("test-project/build/jars/test-project-test-1.0.0.jar"), "org/savantbuild/test/MyClassTest.class", projectDir.resolve("test-project/build/classes/test/org/savantbuild/test/MyClassTest.class"))
     assertTrue(Files.isRegularFile(projectDir.resolve("test-project/build/jars/test-project-test-1.0.0-src.jar")))
     assertJarContains(projectDir.resolve("test-project/build/jars/test-project-test-1.0.0-src.jar"), "org/savantbuild/test/MyClassTest.java", "test.txt")
+    assertJarFileEquals(projectDir.resolve("test-project/build/jars/test-project-test-1.0.0-src.jar"), "org/savantbuild/test/MyClassTest.java", projectDir.resolve("test-project/src/test/java/org/savantbuild/test/MyClassTest.java"))
   }
 
   private static void assertJarContains(Path jarFile, String... entries) {
     JarFile jf = new JarFile(jarFile.toFile())
     entries.each({ entry -> assertNotNull(jf.getEntry(entry), "Jar [${jarFile}] is missing entry [${entry}]") })
     jf.close()
+  }
+
+  private static void assertJarFileEquals(Path jarFile, String entry, Path original) throws IOException {
+    JarInputStream jis = new JarInputStream(Files.newInputStream(jarFile));
+    JarEntry jarEntry = jis.getNextJarEntry();
+    while (jarEntry != null && !jarEntry.getName().equals(entry)) {
+      jarEntry = jis.getNextJarEntry();
+    }
+
+    if (jarEntry == null) {
+      fail("Jar [" + jarFile + "] is missing entry [" + entry + "]");
+    }
+
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    byte[] buf = new byte[1024];
+    int length;
+    while ((length = jis.read(buf)) != -1) {
+      baos.write(buf, 0, length);
+    }
+
+    println Files.getLastModifiedTime(original)
+    assertEquals(Files.readAllBytes(original), baos.toByteArray());
+    assertEquals(jarEntry.getSize(), Files.size(original));
+    assertEquals(jarEntry.getCreationTime(), Files.getAttribute(original, "creationTime"));
+//    assertEquals(jarEntry.getLastModifiedTime(), Files.getLastModifiedTime(original));
+//    assertEquals(jarEntry.getTime(), Files.getLastModifiedTime(original).toMillis());
   }
 }

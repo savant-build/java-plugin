@@ -72,7 +72,6 @@ class JavaPlugin extends BaseGroovyPlugin {
    * Compiles the main Java files (src/main/java by default).
    */
   void compileMain() {
-    initialize()
     compile(layout.mainSourceDirectory, layout.mainBuildDirectory, settings.mainDependencies, layout.mainBuildDirectory)
     copyResources(layout.mainResourceDirectory, layout.mainBuildDirectory)
   }
@@ -81,7 +80,6 @@ class JavaPlugin extends BaseGroovyPlugin {
    * Compiles the test Javafiles (src/test/java by default).
    */
   void compileTest() {
-    initialize()
     compile(layout.testSourceDirectory, layout.testBuildDirectory, settings.testDependencies, layout.mainBuildDirectory, layout.testBuildDirectory)
     copyResources(layout.testResourceDirectory, layout.testBuildDirectory)
   }
@@ -94,6 +92,8 @@ class JavaPlugin extends BaseGroovyPlugin {
    * @param dependencies The dependencies to resolve and include on the compile classpath.
    */
   void compile(Path sourceDirectory, Path buildDirectory, List<Map<String, Object>> dependencies, Path... additionalClasspath) {
+    initialize()
+
     Path resolvedSourceDir = project.directory.resolve(sourceDirectory)
     Path resolvedBuildDir = project.directory.resolve(buildDirectory)
 
@@ -164,6 +164,10 @@ class JavaPlugin extends BaseGroovyPlugin {
   }
 
   private void initialize() {
+    if (javacPath) {
+      return
+    }
+
     if (!settings.javaVersion) {
       fail("You must configure the Java version to use with the settings object. It will look something like this:\n\n" +
           "  groovy.settings.javaVersion=\"1.7\"")
