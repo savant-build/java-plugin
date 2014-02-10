@@ -130,6 +130,10 @@ class JavaPlugin extends BaseGroovyPlugin {
    * @param buildDirectory The build directory to copy the files to.
    */
   void copyResources(Path sourceDirectory, Path buildDirectory) {
+    if (!Files.isDirectory(project.directory.resolve(sourceDirectory))) {
+      return
+    }
+
     filePlugin.copy(to: buildDirectory) {
       fileSet(dir: sourceDirectory)
     }
