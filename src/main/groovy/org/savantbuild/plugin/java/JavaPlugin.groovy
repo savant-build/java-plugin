@@ -14,6 +14,7 @@
  * language governing permissions and limitations under the License.
  */
 package org.savantbuild.plugin.java
+
 import org.savantbuild.dep.domain.ArtifactID
 import org.savantbuild.domain.Project
 import org.savantbuild.io.FileTools
@@ -27,11 +28,13 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.function.Function
 import java.util.function.Predicate
+
 /**
  * The Java plugin. The public methods on this class define the features of the plugin.
  */
 class JavaPlugin extends BaseGroovyPlugin {
-  public static final String ERROR_MESSAGE = "You must create the file [~/.savant/plugins/org.savantbuild.plugin.java.properties] " +
+  public static
+  final String ERROR_MESSAGE = "You must create the file [~/.savant/plugins/org.savantbuild.plugin.java.properties] " +
       "that contains the system configuration for the Java system. This file should include the location of the JDK " +
       "(java and javac) by version. These properties look like this:\n\n" +
       "  1.6=/Library/Java/JavaVirtualMachines/1.6.0_65-b14-462.jdk/Contents/Home\n" +
@@ -53,6 +56,12 @@ class JavaPlugin extends BaseGroovyPlugin {
 
   /**
    * Cleans the build directory by completely deleting it.
+   * <p/>
+   * Here is an example of calling this method:
+   * <p/>
+   * <pre>
+   *   java.clean()
+   * </pre>
    */
   void clean() {
     Path buildDir = project.directory.resolve(layout.buildDirectory)
@@ -62,6 +71,12 @@ class JavaPlugin extends BaseGroovyPlugin {
 
   /**
    * Compiles the main and test Java files (src/main/java and src/test/java).
+   * <p/>
+   * Here is an example of calling this method:
+   * <p/>
+   * <pre>
+   *   java.compile()
+   * </pre>
    */
   void compile() {
     compileMain()
@@ -70,6 +85,12 @@ class JavaPlugin extends BaseGroovyPlugin {
 
   /**
    * Compiles the main Java files (src/main/java by default).
+   * <p/>
+   * Here is an example of calling this method:
+   * <p/>
+   * <pre>
+   *   java.compileMain()
+   * </pre>
    */
   void compileMain() {
     compile(layout.mainSourceDirectory, layout.mainBuildDirectory, settings.mainDependencies, layout.mainBuildDirectory)
@@ -78,6 +99,12 @@ class JavaPlugin extends BaseGroovyPlugin {
 
   /**
    * Compiles the test Javafiles (src/test/java by default).
+   * <p/>
+   * Here is an example of calling this method:
+   * <p/>
+   * <pre>
+   *   java.compileTest()
+   * </pre>
    */
   void compileTest() {
     compile(layout.testSourceDirectory, layout.testBuildDirectory, settings.testDependencies, layout.mainBuildDirectory, layout.testBuildDirectory)
@@ -86,6 +113,12 @@ class JavaPlugin extends BaseGroovyPlugin {
 
   /**
    * Compiles an arbitrary source directory to an arbitrary build directory.
+   * <p/>
+   * Here is an example of calling this method:
+   * <p/>
+   * <pre>
+   *   java.compile(Paths.get("src/foo"), Paths.get("build/bar"), [[group: "compile", transitive: false, fetchSource: false]], Paths.get("additionalClasspathDirectory"))
+   * </pre>
    *
    * @param sourceDirectory The source directory that contains the Java source files.
    * @param buildDirectory The build directory to compile the Java files to.
@@ -125,6 +158,12 @@ class JavaPlugin extends BaseGroovyPlugin {
   /**
    * Copies the resource files from the source directory to the build directory. This copies all of the files
    * recursively to the build directory.
+   * <p/>
+   * Here is an example of calling this method:
+   * <p/>
+   * <pre>
+   *   java.copyResources(Paths.get("src/some-resources"), Paths.get("build/output-dir"))
+   * </pre>
    *
    * @param sourceDirectory The source directory that contains the files to copy.
    * @param buildDirectory The build directory to copy the files to.
@@ -139,6 +178,16 @@ class JavaPlugin extends BaseGroovyPlugin {
     }
   }
 
+  /**
+   * Creates the project's Jar files. This creates four Jar files. The main Jar, main source Jar, test Jar and test
+   * source Jar.
+   * <p/>
+   * Here is an example of calling this method:
+   * <p/>
+   * <pre>
+   *   java.jar()
+   * </pre>
+   */
   void jar() {
     initialize()
 
@@ -148,6 +197,18 @@ class JavaPlugin extends BaseGroovyPlugin {
     jar(project.toArtifact().getArtifactTestSourceFile(), layout.testSourceDirectory, layout.testResourceDirectory)
   }
 
+  /**
+   * Creates a single Jar file by adding all of the files in the given directories.
+   * <p/>
+   * Here is an example of calling this method:
+   * <p/>
+   * <pre>
+   *   java.jar(Paths.get("foo/bar.jar"), Paths.get("src/main/groovy"), Paths.get("some-other-dir"))
+   * </pre>
+   *
+   * @param jarFile The Jar file to create.
+   * @param directories The directories to include in the Jar file.
+   */
   void jar(String jarFile, Path... directories) {
     Path jarFilePath = layout.jarOutputDirectory.resolve(jarFile)
 
@@ -161,7 +222,7 @@ class JavaPlugin extends BaseGroovyPlugin {
   }
 
   private String classpath(List<Map<String, Object>> dependenciesList, Path... additionalPaths) {
-    return dependencyPlugin.classpath{
+    return dependencyPlugin.classpath {
       dependenciesList.each { deps -> dependencies(deps) }
       additionalPaths.each { additionalPath -> path(location: additionalPath) }
     }.toString("-classpath ")

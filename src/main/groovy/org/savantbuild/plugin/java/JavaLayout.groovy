@@ -22,12 +22,43 @@ import java.nio.file.Paths
  * Layout class that defines the directories used by the Java plugin.
  */
 class JavaLayout {
+  /**
+   * The build directory. Defaults to {@code build}.
+   */
   Path buildDirectory = Paths.get("build")
+
+  /**
+   * The jar build directory. Defaults to {@code build/jars}.
+   */
   Path jarOutputDirectory = buildDirectory.resolve("jars")
+
+  /**
+   * The main source directory. Defaults to {@code src/main/java}.
+   */
   Path mainSourceDirectory = Paths.get("src/main/java")
+
+  /**
+   * The main resource directory. Defaults to {@code src/main/resources}.
+   */
   Path mainResourceDirectory = Paths.get("src/main/resources")
+
+  /**
+   * The main build directory. Defaults to {@code build/classes/main}.
+   */
   Path mainBuildDirectory = buildDirectory.resolve("classes/main")
+
+  /**
+   * The test source directory. Defaults to {@code src/test/java}.
+   */
   Path testSourceDirectory = Paths.get("src/test/java")
+
+  /**
+   * The test resource directory. Defaults to {@code src/test/resources}.
+   */
   Path testResourceDirectory = Paths.get("src/test/resources")
+
+  /**
+   * The test build directory. Defaults to {@code build/classes/test}.
+   */
   Path testBuildDirectory = buildDirectory.resolve("classes/test")
 }
