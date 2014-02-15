@@ -107,6 +107,9 @@ class JavaPluginTest {
     assertTrue(Files.isRegularFile(projectDir.resolve("test-project/build/jars/test-project-test-1.0.0-src.jar")))
     assertJarContains(projectDir.resolve("test-project/build/jars/test-project-test-1.0.0-src.jar"), "org/savantbuild/test/MyClassTest.java", "test.txt")
     assertJarFileEquals(projectDir.resolve("test-project/build/jars/test-project-test-1.0.0-src.jar"), "org/savantbuild/test/MyClassTest.java", projectDir.resolve("test-project/src/test/java/org/savantbuild/test/MyClassTest.java"))
+
+    plugin.document()
+    assertTrue(Files.isRegularFile(projectDir.resolve("test-project/build/doc/index.html")))
   }
 
   private static void assertJarContains(Path jarFile, String... entries) {

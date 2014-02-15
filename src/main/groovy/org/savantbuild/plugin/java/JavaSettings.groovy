@@ -26,9 +26,14 @@ class JavaSettings {
   String javaVersion
 
   /**
-   * Any additional compiler arguments. This are included when javac is invoked. Defaults to {@code ""}.
+   * Additional compiler arguments. This are included when javac is invoked. Defaults to {@code ""}.
    */
   String compilerArguments = ""
+
+  /**
+   * Additional JavaDoc arguments. This are included when javadoc is invoked. Defaults to {@code ""}.
+   */
+  String docArguments = ""
 
   /**
    * The list of dependencies to include on the classpath when javac is called to compile the main Java source files.

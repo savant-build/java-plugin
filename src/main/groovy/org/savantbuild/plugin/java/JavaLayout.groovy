@@ -28,6 +28,11 @@ class JavaLayout {
   Path buildDirectory = Paths.get("build")
 
   /**
+   * The documentation directory. Defaults to {@code build/doc}.
+   */
+  Path docDirectory = buildDirectory.resolve("doc")
+
+  /**
    * The jar build directory. Defaults to {@code build/jars}.
    */
   Path jarOutputDirectory = buildDirectory.resolve("jars")

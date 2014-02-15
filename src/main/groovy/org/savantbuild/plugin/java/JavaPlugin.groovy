@@ -17,6 +17,7 @@ package org.savantbuild.plugin.java
 
 import org.savantbuild.dep.domain.ArtifactID
 import org.savantbuild.domain.Project
+import org.savantbuild.io.FileSet
 import org.savantbuild.io.FileTools
 import org.savantbuild.output.Output
 import org.savantbuild.plugin.dep.DependencyPlugin
@@ -28,6 +29,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.function.Function
 import java.util.function.Predicate
+import java.util.stream.Collectors
 
 /**
  * The Java plugin. The public methods on this class define the features of the plugin.
@@ -44,6 +46,7 @@ class JavaPlugin extends BaseGroovyPlugin {
   JavaSettings settings = new JavaSettings()
   Properties properties
   Path javacPath
+  Path javaDocPath
   FilePlugin filePlugin
   DependencyPlugin dependencyPlugin
 
@@ -179,6 +182,39 @@ class JavaPlugin extends BaseGroovyPlugin {
   }
 
   /**
+   * Creates the project's JavaDoc. This executes the javadoc command and outputs the docs to the {@code layout.docDirectory}
+   * <p/>
+   * Here is an example of calling this method:
+   * <p/>
+   * <pre>
+   *   java.document()
+   * </pre>
+   */
+  void document() {
+    initialize()
+
+    output.info "Generating JavaDoc to [${layout.docDirectory}]"
+
+    FileSet fileSet = new FileSet(project.directory.resolve(layout.mainSourceDirectory))
+    Set<String> packages = fileSet.toFileInfos()
+                                  .stream()
+                                  .map({ info -> info.relative.getParent().toString().replace("/", ".") })
+                                  .collect(Collectors.toSet())
+
+    String command = "${javaDocPath} ${classpath(settings.mainDependencies)} ${settings.docArguments} -sourcepath ${layout.mainSourceDirectory} -d ${layout.docDirectory} ${packages.join(" ")}"
+    output.debug("Executing [${command}]")
+
+    Process process = command.execute([], project.directory.toFile())
+    process.consumeProcessOutput((Appendable) System.out, System.err)
+    process.waitFor()
+
+    int exitCode = process.exitValue()
+    if (exitCode != 0) {
+      fail("JavaDoc failed")
+    }
+  }
+
+  /**
    * Creates the project's Jar files. This creates four Jar files. The main Jar, main source Jar, test Jar and test
    * source Jar.
    * <p/>
@@ -249,6 +285,14 @@ class JavaPlugin extends BaseGroovyPlugin {
     }
     if (!Files.isExecutable(javacPath)) {
       fail("The javac compiler [${javacPath.toAbsolutePath()}] is not executable.")
+    }
+
+    javaDocPath = Paths.get(javaHome, "bin/javadoc")
+    if (!Files.isRegularFile(javaDocPath)) {
+      fail("The javac compiler [${javaDocPath.toAbsolutePath()}] does not exist.")
+    }
+    if (!Files.isExecutable(javaDocPath)) {
+      fail("The javac compiler [${javaDocPath.toAbsolutePath()}] is not executable.")
     }
   }
 }
