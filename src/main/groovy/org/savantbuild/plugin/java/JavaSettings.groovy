@@ -38,7 +38,7 @@ class JavaSettings {
   /**
    * The list of dependencies to include on the classpath when javac is called to compile the main Java source files.
    * This defaults to:
-   * <p/>
+   * <p>
    * <pre>
    *   [
    *     [group: "compile", transitive: false, fetchSource: false],
@@ -54,7 +54,7 @@ class JavaSettings {
   /**
    * The list of dependencies to include on the classpath when java is called to compile the test Java source files.
    * This defaults to:
-   * <p/>
+   * <p>
    * <pre>
    *   [
    *     [group: "compile", transitive: false, fetchSource: false],
