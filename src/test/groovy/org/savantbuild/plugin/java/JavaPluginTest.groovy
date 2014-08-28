@@ -25,6 +25,7 @@ import org.savantbuild.domain.Project
 import org.savantbuild.io.FileTools
 import org.savantbuild.output.Output
 import org.savantbuild.output.SystemOutOutput
+import org.savantbuild.runtime.RuntimeConfiguration
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
 
@@ -80,7 +81,7 @@ class JavaPluginTest {
         )
     )
 
-    JavaPlugin plugin = new JavaPlugin(project, output)
+    JavaPlugin plugin = new JavaPlugin(project, new RuntimeConfiguration(), output)
     plugin.settings.javaVersion = "1.6"
 
     plugin.clean()
