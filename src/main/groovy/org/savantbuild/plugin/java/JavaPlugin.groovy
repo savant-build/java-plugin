@@ -20,6 +20,7 @@ import org.savantbuild.domain.Project
 import org.savantbuild.io.FileSet
 import org.savantbuild.io.FileTools
 import org.savantbuild.output.Output
+import org.savantbuild.parser.groovy.GroovyTools
 import org.savantbuild.plugin.dep.DependencyPlugin
 import org.savantbuild.plugin.file.FilePlugin
 import org.savantbuild.plugin.groovy.BaseGroovyPlugin
@@ -97,7 +98,7 @@ class JavaPlugin extends BaseGroovyPlugin {
    * </pre>
    */
   void compileMain() {
-    compile(layout.mainSourceDirectory, layout.mainBuildDirectory, settings.mainDependencies, layout.mainBuildDirectory)
+    compileInternal(layout.mainSourceDirectory, layout.mainBuildDirectory, settings.mainDependencies, layout.mainBuildDirectory)
     copyResources(layout.mainResourceDirectory, layout.mainBuildDirectory)
   }
 
@@ -111,9 +112,86 @@ class JavaPlugin extends BaseGroovyPlugin {
    * </pre>
    */
   void compileTest() {
-    compile(layout.testSourceDirectory, layout.testBuildDirectory, settings.testDependencies, layout.mainBuildDirectory, layout.testBuildDirectory)
+    compileInternal(layout.testSourceDirectory, layout.testBuildDirectory, settings.testDependencies, layout.mainBuildDirectory, layout.testBuildDirectory)
     copyResources(layout.testResourceDirectory, layout.testBuildDirectory)
   }
+
+  /**
+   * Creates the project's JavaDoc. This executes the javadoc command and outputs the docs to the {@code layout.docDirectory}
+   * <p>
+   * Here is an example of calling this method:
+   * <p>
+   * <pre>
+   *   java.document()
+   * </pre>
+   */
+  void document() {
+    initialize()
+
+    output.info "Generating JavaDoc to [${layout.docDirectory}]"
+
+    FileSet fileSet = new FileSet(project.directory.resolve(layout.mainSourceDirectory))
+    Set<String> packages = fileSet.toFileInfos()
+        .stream()
+        .map({ info -> info.relative.getParent().toString().replace("/", ".") })
+        .collect(Collectors.toSet())
+
+    String command = "${javaDocPath} ${classpath(settings.mainDependencies)} ${settings.docArguments} -sourcepath ${layout.mainSourceDirectory} -d ${layout.docDirectory} ${packages.join(" ")}"
+    output.debug("Executing [${command}]")
+
+    Process process = command.execute([], project.directory.toFile())
+    process.consumeProcessOutput((Appendable) System.out, System.err)
+    process.waitFor()
+
+    int exitCode = process.exitValue()
+    if (exitCode != 0) {
+      fail("JavaDoc failed")
+    }
+  }
+
+  /**
+   * Creates the project's Jar files. This creates four Jar files. The main Jar, main source Jar, test Jar and test
+   * source Jar.
+   * <p>
+   * Here is an example of calling this method:
+   * <p>
+   * <pre>
+   *   java.jar()
+   * </pre>
+   */
+  void jar() {
+    initialize()
+
+    jarInternal(project.toArtifact().getArtifactFile(), layout.mainBuildDirectory)
+    jarInternal(project.toArtifact().getArtifactSourceFile(), layout.mainSourceDirectory, layout.mainResourceDirectory)
+    jarInternal(project.toArtifact().getArtifactTestFile(), layout.testBuildDirectory)
+    jarInternal(project.toArtifact().getArtifactTestSourceFile(), layout.testSourceDirectory, layout.testResourceDirectory)
+  }
+
+  /**
+   * Executes a Java program. Here is an example of calling this method:
+   * <p>
+   * <pre>
+   *   java.execute(className: "foo.bar.baz", failOnError: true) {
+   *
+   *   }
+   * </pre>
+   *
+   * @param attributes
+   * @param closure
+   */
+  void execute(Map<String, Object> attributes, Closure closure) {
+    if (!GroovyTools.attributesValid(attributes, ["className", "failOnError"], ["className"], ["className": String.class, "failOnError": boolean.class])) {
+      fail("Invalid call to java.execute. The [className] attribute is required and must be a String and the failOnError attribute is optional but must be a boolean. Here is an example:\n\n" +
+          "  java.execute(className: \"foo.bar.baz\") {\n" +
+          "  }")
+    }
+
+    ExecuteDelegate executeDelegate = new ExecuteDelegate(attributes)
+    closure.delegate = executeDelegate
+    closure.run()
+  }
+
 
   /**
    * Compiles an arbitrary source directory to an arbitrary build directory.
@@ -128,7 +206,7 @@ class JavaPlugin extends BaseGroovyPlugin {
    * @param buildDirectory The build directory to compile the Java files to.
    * @param dependencies The dependencies to resolve and include on the compile classpath.
    */
-  void compile(Path sourceDirectory, Path buildDirectory, List<Map<String, Object>> dependencies, Path... additionalClasspath) {
+  private void compileInternal(Path sourceDirectory, Path buildDirectory, List<Map<String, Object>> dependencies, Path... additionalClasspath) {
     initialize()
 
     Path resolvedSourceDir = project.directory.resolve(sourceDirectory)
@@ -172,7 +250,7 @@ class JavaPlugin extends BaseGroovyPlugin {
    * @param sourceDirectory The source directory that contains the files to copy.
    * @param buildDirectory The build directory to copy the files to.
    */
-  void copyResources(Path sourceDirectory, Path buildDirectory) {
+  private void copyResources(Path sourceDirectory, Path buildDirectory) {
     if (!Files.isDirectory(project.directory.resolve(sourceDirectory))) {
       return
     }
@@ -180,58 +258,6 @@ class JavaPlugin extends BaseGroovyPlugin {
     filePlugin.copy(to: buildDirectory) {
       fileSet(dir: sourceDirectory)
     }
-  }
-
-  /**
-   * Creates the project's JavaDoc. This executes the javadoc command and outputs the docs to the {@code layout.docDirectory}
-   * <p>
-   * Here is an example of calling this method:
-   * <p>
-   * <pre>
-   *   java.document()
-   * </pre>
-   */
-  void document() {
-    initialize()
-
-    output.info "Generating JavaDoc to [${layout.docDirectory}]"
-
-    FileSet fileSet = new FileSet(project.directory.resolve(layout.mainSourceDirectory))
-    Set<String> packages = fileSet.toFileInfos()
-                                  .stream()
-                                  .map({ info -> info.relative.getParent().toString().replace("/", ".") })
-                                  .collect(Collectors.toSet())
-
-    String command = "${javaDocPath} ${classpath(settings.mainDependencies)} ${settings.docArguments} -sourcepath ${layout.mainSourceDirectory} -d ${layout.docDirectory} ${packages.join(" ")}"
-    output.debug("Executing [${command}]")
-
-    Process process = command.execute([], project.directory.toFile())
-    process.consumeProcessOutput((Appendable) System.out, System.err)
-    process.waitFor()
-
-    int exitCode = process.exitValue()
-    if (exitCode != 0) {
-      fail("JavaDoc failed")
-    }
-  }
-
-  /**
-   * Creates the project's Jar files. This creates four Jar files. The main Jar, main source Jar, test Jar and test
-   * source Jar.
-   * <p>
-   * Here is an example of calling this method:
-   * <p>
-   * <pre>
-   *   java.jar()
-   * </pre>
-   */
-  void jar() {
-    initialize()
-
-    jar(project.toArtifact().getArtifactFile(), layout.mainBuildDirectory)
-    jar(project.toArtifact().getArtifactSourceFile(), layout.mainSourceDirectory, layout.mainResourceDirectory)
-    jar(project.toArtifact().getArtifactTestFile(), layout.testBuildDirectory)
-    jar(project.toArtifact().getArtifactTestSourceFile(), layout.testSourceDirectory, layout.testResourceDirectory)
   }
 
   /**
@@ -246,7 +272,7 @@ class JavaPlugin extends BaseGroovyPlugin {
    * @param jarFile The Jar file to create.
    * @param directories The directories to include in the Jar file.
    */
-  void jar(String jarFile, Path... directories) {
+  private void jarInternal(String jarFile, Path... directories) {
     Path jarFilePath = layout.jarOutputDirectory.resolve(jarFile)
 
     output.info "Creating JAR [${jarFile}]"
@@ -272,7 +298,7 @@ class JavaPlugin extends BaseGroovyPlugin {
 
     if (!settings.javaVersion) {
       fail("You must configure the Java version to use with the settings object. It will look something like this:\n\n" +
-          "  groovy.settings.javaVersion=\"1.7\"")
+          "  java.settings.javaVersion=\"1.7\"")
     }
 
     String javaHome = properties.getProperty(settings.javaVersion)
