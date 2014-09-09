@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Inversoft Inc., All Rights Reserved
+ * Copyright (c) 2014, Inversoft Inc., All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ class JavaPluginTest {
     project.license = License.Apachev2
 
     Path repositoryPath = Paths.get(System.getProperty("user.home"), "dev/inversoft/repositories/savant")
-    project.dependencies = new Dependencies(new DependencyGroup("test-compile", false, new Dependency("org.testng:testng:6.8.7:jar", false)))
+    project.dependencies = new Dependencies(new DependencyGroup("test-compile", false, new Artifact("org.testng:testng:6.8.7:jar")))
     project.workflow = new Workflow(
         new FetchWorkflow(output,
             new CacheProcess(output, projectDir.resolve("build/cache").toString()),
