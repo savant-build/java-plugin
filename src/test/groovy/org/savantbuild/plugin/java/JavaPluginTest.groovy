@@ -69,12 +69,11 @@ class JavaPluginTest {
     project.version = new Version("1.0")
     project.license = License.Apachev2
 
-    Path repositoryPath = Paths.get(System.getProperty("user.home"), "dev/inversoft/repositories/savant")
-    project.dependencies = new Dependencies(new DependencyGroup("test-compile", false, new Artifact("org.testng:testng:6.8.7:jar")))
+    project.dependencies = new Dependencies(new DependencyGroup("test-compile", false, new Artifact("org.testng:testng:6.8.7:jar", false)))
     project.workflow = new Workflow(
         new FetchWorkflow(output,
             new CacheProcess(output, projectDir.resolve("build/cache").toString()),
-            new URLProcess(output, repositoryPath.toUri().toString(), null, null)
+            new URLProcess(output, "http://savant.inversoft.org", null, null)
         ),
         new PublishWorkflow(
             new CacheProcess(output, projectDir.resolve("build/cache").toString())
