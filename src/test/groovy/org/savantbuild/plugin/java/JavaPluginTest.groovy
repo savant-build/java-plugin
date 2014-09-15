@@ -67,7 +67,7 @@ class JavaPluginTest {
     project.group = "org.savantbuild.test"
     project.name = "test-project"
     project.version = new Version("1.0")
-    project.license = License.Apachev2
+    project.licenses.put(License.ApacheV2_0, null)
 
     project.dependencies = new Dependencies(new DependencyGroup("test-compile", false, new Artifact("org.testng:testng:6.8.7:jar", false)))
     project.workflow = new Workflow(
