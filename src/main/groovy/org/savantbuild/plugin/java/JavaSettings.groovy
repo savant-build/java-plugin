@@ -26,9 +26,9 @@ class JavaSettings {
   String javaVersion
 
   /**
-   * Additional compiler arguments. This are included when javac is invoked. Defaults to {@code ""}.
+   * Additional compiler arguments. This are included when javac is invoked. Defaults to {@code "-g"}.
    */
-  String compilerArguments = ""
+  String compilerArguments = "-g"
 
   /**
    * Additional JavaDoc arguments. This are included when javadoc is invoked. Defaults to {@code ""}.
