@@ -14,13 +14,11 @@
  * language governing permissions and limitations under the License.
  */
 package org.savantbuild.plugin.java
-
 import org.savantbuild.dep.domain.ArtifactID
 import org.savantbuild.domain.Project
 import org.savantbuild.io.FileSet
 import org.savantbuild.io.FileTools
 import org.savantbuild.output.Output
-import org.savantbuild.parser.groovy.GroovyTools
 import org.savantbuild.plugin.dep.DependencyPlugin
 import org.savantbuild.plugin.file.FilePlugin
 import org.savantbuild.plugin.groovy.BaseGroovyPlugin
@@ -32,7 +30,6 @@ import java.nio.file.Paths
 import java.util.function.Function
 import java.util.function.Predicate
 import java.util.stream.Collectors
-
 /**
  * The Java plugin. The public methods on this class define the features of the plugin.
  */
@@ -128,7 +125,7 @@ class JavaPlugin extends BaseGroovyPlugin {
   void document() {
     initialize()
 
-    output.info "Generating JavaDoc to [${layout.docDirectory}]"
+    output.info("Generating JavaDoc to [%s]", layout.docDirectory)
 
     FileSet fileSet = new FileSet(project.directory.resolve(layout.mainSourceDirectory))
     Set<String> packages = fileSet.toFileInfos()
@@ -137,7 +134,7 @@ class JavaPlugin extends BaseGroovyPlugin {
         .collect(Collectors.toSet())
 
     String command = "${javaDocPath} ${classpath(settings.mainDependencies)} ${settings.docArguments} -sourcepath ${layout.mainSourceDirectory} -d ${layout.docDirectory} ${packages.join(" ")}"
-    output.debug("Executing [${command}]")
+    output.debug("Executing JavaDoc command [%s]", command)
 
     Process process = command.execute([], project.directory.toFile())
     process.consumeProcessOutput((Appendable) System.out, System.err)
@@ -169,31 +166,6 @@ class JavaPlugin extends BaseGroovyPlugin {
   }
 
   /**
-   * Executes a Java program. Here is an example of calling this method:
-   * <p>
-   * <pre>
-   *   java.execute(className: "foo.bar.baz", failOnError: true) {
-   *
-   *   }
-   * </pre>
-   *
-   * @param attributes
-   * @param closure
-   */
-  void execute(Map<String, Object> attributes, Closure closure) {
-    if (!GroovyTools.attributesValid(attributes, ["className", "failOnError"], ["className"], ["className": String.class, "failOnError": boolean.class])) {
-      fail("Invalid call to java.execute. The [className] attribute is required and must be a String and the failOnError attribute is optional but must be a boolean. Here is an example:\n\n" +
-          "  java.execute(className: \"foo.bar.baz\") {\n" +
-          "  }")
-    }
-
-    ExecuteDelegate executeDelegate = new ExecuteDelegate(attributes)
-    closure.delegate = executeDelegate
-    closure.run()
-  }
-
-
-  /**
    * Compiles an arbitrary source directory to an arbitrary build directory.
    * <p>
    * Here is an example of calling this method:
@@ -212,20 +184,22 @@ class JavaPlugin extends BaseGroovyPlugin {
     Path resolvedSourceDir = project.directory.resolve(sourceDirectory)
     Path resolvedBuildDir = project.directory.resolve(buildDirectory)
 
-    output.debug "Looking for modified files to compile in [${resolvedSourceDir}] compared with [${resolvedBuildDir}]"
+    output.debug("Looking for modified files to compile in [%s] compared with [%s]", resolvedSourceDir, resolvedBuildDir)
 
     Predicate<Path> filter = FileTools.extensionFilter(".java")
     Function<Path, Path> mapper = FileTools.extensionMapper(".java", ".class")
     List<Path> filesToCompile = FileTools.modifiedFiles(resolvedSourceDir, resolvedBuildDir, filter, mapper)
                                          .collect({ path -> sourceDirectory.resolve(path) })
     if (filesToCompile.isEmpty()) {
-      output.info("Skipping compile for source directory [${sourceDirectory}]. No files need compiling")
+      output.info("Skipping compile for source directory [%s]. No files need compiling", sourceDirectory)
       return
     }
 
-    output.info "Compiling [${filesToCompile.size()}] Java classes from [${sourceDirectory}] to [${buildDirectory}]"
+    output.info("Compiling [${filesToCompile.size()}] Java classes from [${sourceDirectory}] to [${buildDirectory}]")
 
     String command = "${javacPath} ${settings.compilerArguments} ${classpath(dependencies, additionalClasspath)} -sourcepath ${sourceDirectory} -d ${buildDirectory} ${filesToCompile.join(" ")}"
+    output.debug("Executing compiler command [%s]", command)
+
     Files.createDirectories(resolvedBuildDir)
     Process process = command.execute(null, project.directory.toFile())
     process.consumeProcessOutput((Appendable) System.out, System.err)
@@ -275,7 +249,7 @@ class JavaPlugin extends BaseGroovyPlugin {
   private void jarInternal(String jarFile, Path... directories) {
     Path jarFilePath = layout.jarOutputDirectory.resolve(jarFile)
 
-    output.info "Creating JAR [${jarFile}]"
+    output.info("Creating JAR [%s]", jarFile)
 
     filePlugin.jar(file: jarFilePath) {
       directories.each { dir ->
@@ -303,23 +277,23 @@ class JavaPlugin extends BaseGroovyPlugin {
 
     String javaHome = properties.getProperty(settings.javaVersion)
     if (!javaHome) {
-      fail("No JDK is configured for version [${settings.javaVersion}].\n\n" + ERROR_MESSAGE)
+      fail("No JDK is configured for version [%s].\n\n[%s]", settings.javaVersion, ERROR_MESSAGE)
     }
 
     javacPath = Paths.get(javaHome, "bin/javac")
     if (!Files.isRegularFile(javacPath)) {
-      fail("The javac compiler [${javacPath.toAbsolutePath()}] does not exist.")
+      fail("The javac compiler [%s] does not exist.", javacPath.toAbsolutePath())
     }
     if (!Files.isExecutable(javacPath)) {
-      fail("The javac compiler [${javacPath.toAbsolutePath()}] is not executable.")
+      fail("The javac compiler [%s] is not executable.", javacPath.toAbsolutePath())
     }
 
     javaDocPath = Paths.get(javaHome, "bin/javadoc")
     if (!Files.isRegularFile(javaDocPath)) {
-      fail("The javac compiler [${javaDocPath.toAbsolutePath()}] does not exist.")
+      fail("The javac compiler [%s] does not exist.", javaDocPath.toAbsolutePath())
     }
     if (!Files.isExecutable(javaDocPath)) {
-      fail("The javac compiler [${javaDocPath.toAbsolutePath()}] is not executable.")
+      fail("The javac compiler [%s] is not executable.", javaDocPath.toAbsolutePath())
     }
   }
 }
