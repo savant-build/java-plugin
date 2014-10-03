@@ -14,6 +14,7 @@
  * language governing permissions and limitations under the License.
  */
 package org.savantbuild.plugin.java
+
 import org.savantbuild.dep.domain.ArtifactID
 import org.savantbuild.domain.Project
 import org.savantbuild.io.FileSet
@@ -30,6 +31,7 @@ import java.nio.file.Paths
 import java.util.function.Function
 import java.util.function.Predicate
 import java.util.stream.Collectors
+
 /**
  * The Java plugin. The public methods on this class define the features of the plugin.
  */
@@ -40,13 +42,20 @@ class JavaPlugin extends BaseGroovyPlugin {
       "(java and javac) by version. These properties look like this:\n\n" +
       "  1.6=/Library/Java/JavaVirtualMachines/1.6.0_65-b14-462.jdk/Contents/Home\n" +
       "  1.7=/Library/Java/JavaVirtualMachines/jdk1.7.0_10.jdk/Contents/Home\n" +
+
       "  1.8=/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home\n"
   JavaLayout layout = new JavaLayout()
+
   JavaSettings settings = new JavaSettings()
+
   Properties properties
+
   Path javacPath
+
   Path javaDocPath
+
   FilePlugin filePlugin
+
   DependencyPlugin dependencyPlugin
 
   JavaPlugin(Project project, RuntimeConfiguration runtimeConfiguration, Output output) {
@@ -189,7 +198,7 @@ class JavaPlugin extends BaseGroovyPlugin {
     Predicate<Path> filter = FileTools.extensionFilter(".java")
     Function<Path, Path> mapper = FileTools.extensionMapper(".java", ".class")
     List<Path> filesToCompile = FileTools.modifiedFiles(resolvedSourceDir, resolvedBuildDir, filter, mapper)
-                                         .collect({ path -> sourceDirectory.resolve(path) })
+        .collect({ path -> sourceDirectory.resolve(path) })
     if (filesToCompile.isEmpty()) {
       output.info("Skipping compile for source directory [%s]. No files need compiling", sourceDirectory)
       return
