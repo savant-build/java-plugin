@@ -76,7 +76,7 @@ class JavaPlugin extends BaseGroovyPlugin {
    */
   void clean() {
     Path buildDir = project.directory.resolve(layout.buildDirectory)
-    output.info "Cleaning [${buildDir}]"
+    output.infoln "Cleaning [${buildDir}]"
     FileTools.prune(buildDir)
   }
 
@@ -134,7 +134,7 @@ class JavaPlugin extends BaseGroovyPlugin {
   void document() {
     initialize()
 
-    output.info("Generating JavaDoc to [%s]", layout.docDirectory)
+    output.infoln("Generating JavaDoc to [%s]", layout.docDirectory)
 
     FileSet fileSet = new FileSet(project.directory.resolve(layout.mainSourceDirectory))
     Set<String> packages = fileSet.toFileInfos()
@@ -143,7 +143,7 @@ class JavaPlugin extends BaseGroovyPlugin {
         .collect(Collectors.toSet())
 
     String command = "${javaDocPath} ${classpath(settings.mainDependencies)} ${settings.docArguments} -sourcepath ${layout.mainSourceDirectory} -d ${layout.docDirectory} ${packages.join(" ")}"
-    output.debug("Executing JavaDoc command [%s]", command)
+    output.debugln("Executing JavaDoc command [%s]", command)
 
     Process process = command.execute([], project.directory.toFile())
     process.consumeProcessOutput((Appendable) System.out, System.err)
@@ -193,21 +193,21 @@ class JavaPlugin extends BaseGroovyPlugin {
     Path resolvedSourceDir = project.directory.resolve(sourceDirectory)
     Path resolvedBuildDir = project.directory.resolve(buildDirectory)
 
-    output.debug("Looking for modified files to compile in [%s] compared with [%s]", resolvedSourceDir, resolvedBuildDir)
+    output.debugln("Looking for modified files to compile in [%s] compared with [%s]", resolvedSourceDir, resolvedBuildDir)
 
     Predicate<Path> filter = FileTools.extensionFilter(".java")
     Function<Path, Path> mapper = FileTools.extensionMapper(".java", ".class")
     List<Path> filesToCompile = FileTools.modifiedFiles(resolvedSourceDir, resolvedBuildDir, filter, mapper)
         .collect({ path -> sourceDirectory.resolve(path) })
     if (filesToCompile.isEmpty()) {
-      output.info("Skipping compile for source directory [%s]. No files need compiling", sourceDirectory)
+      output.infoln("Skipping compile for source directory [%s]. No files need compiling", sourceDirectory)
       return
     }
 
-    output.info("Compiling [${filesToCompile.size()}] Java classes from [${sourceDirectory}] to [${buildDirectory}]")
+    output.infoln("Compiling [${filesToCompile.size()}] Java classes from [${sourceDirectory}] to [${buildDirectory}]")
 
     String command = "${javacPath} ${settings.compilerArguments} ${classpath(dependencies, additionalClasspath)} -sourcepath ${sourceDirectory} -d ${buildDirectory} ${filesToCompile.join(" ")}"
-    output.debug("Executing compiler command [%s]", command)
+    output.debugln("Executing compiler command [%s]", command)
 
     Files.createDirectories(resolvedBuildDir)
     Process process = command.execute(null, project.directory.toFile())
@@ -258,7 +258,7 @@ class JavaPlugin extends BaseGroovyPlugin {
   private void jarInternal(String jarFile, Path... directories) {
     Path jarFilePath = layout.jarOutputDirectory.resolve(jarFile)
 
-    output.info("Creating JAR [%s]", jarFile)
+    output.infoln("Creating JAR [%s]", jarFile)
 
     filePlugin.jar(file: jarFilePath) {
       directories.each { dir ->
