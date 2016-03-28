@@ -15,12 +15,17 @@
  */
 package org.savantbuild.test;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Java class.
  *
  * @author Brian Pontarelli
  */
 public class MyClass {
+  private final static Logger logger = LoggerFactory.getLogger("test");
+
   public String doSomething() {
     return "Hello World";
   }

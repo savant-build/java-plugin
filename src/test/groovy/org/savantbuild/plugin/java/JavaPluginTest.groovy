@@ -15,7 +15,18 @@
  */
 package org.savantbuild.plugin.java
 
-import org.savantbuild.dep.domain.*
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.jar.JarEntry
+import java.util.jar.JarFile
+import java.util.jar.JarInputStream
+
+import org.savantbuild.dep.domain.Artifact
+import org.savantbuild.dep.domain.Dependencies
+import org.savantbuild.dep.domain.DependencyGroup
+import org.savantbuild.dep.domain.License
+import org.savantbuild.dep.domain.Version
 import org.savantbuild.dep.workflow.FetchWorkflow
 import org.savantbuild.dep.workflow.PublishWorkflow
 import org.savantbuild.dep.workflow.Workflow
@@ -29,14 +40,11 @@ import org.savantbuild.runtime.RuntimeConfiguration
 import org.testng.annotations.BeforeSuite
 import org.testng.annotations.Test
 
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.jar.JarEntry
-import java.util.jar.JarFile
-import java.util.jar.JarInputStream
-
-import static org.testng.Assert.*
+import static org.testng.Assert.assertEquals
+import static org.testng.Assert.assertFalse
+import static org.testng.Assert.assertNotNull
+import static org.testng.Assert.assertTrue
+import static org.testng.Assert.fail
 
 /**
  * Tests the Java plugin.
@@ -61,7 +69,7 @@ class JavaPluginTest {
     FileTools.prune(projectDir.resolve("build/cache"))
 
     Output output = new SystemOutOutput(true)
-//    output.enableDebug()
+    output.enableDebug()
 
     Project project = new Project(projectDir.resolve("test-project"), output)
     project.group = "org.savantbuild.test"
@@ -82,6 +90,7 @@ class JavaPluginTest {
 
     JavaPlugin plugin = new JavaPlugin(project, new RuntimeConfiguration(), output)
     plugin.settings.javaVersion = "1.6"
+    plugin.settings.libraryDirectories.add("lib")
 
     plugin.clean()
     assertFalse(Files.isDirectory(projectDir.resolve("test-project/build")))

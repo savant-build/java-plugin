@@ -15,6 +15,13 @@
  */
 package org.savantbuild.plugin.java
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.function.Function
+import java.util.function.Predicate
+import java.util.stream.Collectors
+
 import org.savantbuild.dep.domain.ArtifactID
 import org.savantbuild.domain.Project
 import org.savantbuild.io.FileSet
@@ -24,13 +31,6 @@ import org.savantbuild.plugin.dep.DependencyPlugin
 import org.savantbuild.plugin.file.FilePlugin
 import org.savantbuild.plugin.groovy.BaseGroovyPlugin
 import org.savantbuild.runtime.RuntimeConfiguration
-
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-import java.util.function.Function
-import java.util.function.Predicate
-import java.util.stream.Collectors
 
 /**
  * The Java plugin. The public methods on this class define the features of the plugin.
@@ -42,8 +42,8 @@ class JavaPlugin extends BaseGroovyPlugin {
       "(java and javac) by version. These properties look like this:\n\n" +
       "  1.6=/Library/Java/JavaVirtualMachines/1.6.0_65-b14-462.jdk/Contents/Home\n" +
       "  1.7=/Library/Java/JavaVirtualMachines/jdk1.7.0_10.jdk/Contents/Home\n" +
-
       "  1.8=/Library/Java/JavaVirtualMachines/jdk1.8.0.jdk/Contents/Home\n"
+
   JavaLayout layout = new JavaLayout()
 
   JavaSettings settings = new JavaSettings()
@@ -142,7 +142,7 @@ class JavaPlugin extends BaseGroovyPlugin {
         .map({ info -> info.relative.getParent().toString().replace("/", ".") })
         .collect(Collectors.toSet())
 
-    String command = "${javaDocPath} ${classpath(settings.mainDependencies)} ${settings.docArguments} -sourcepath ${layout.mainSourceDirectory} -d ${layout.docDirectory} ${packages.join(" ")}"
+    String command = "${javaDocPath} ${classpath(settings.mainDependencies, settings.libraryDirectories)} ${settings.docArguments} -sourcepath ${layout.mainSourceDirectory} -d ${layout.docDirectory} ${packages.join(" ")}"
     output.debugln("Executing JavaDoc command [%s]", command)
 
     Process process = command.execute([], project.directory.toFile())
@@ -206,7 +206,7 @@ class JavaPlugin extends BaseGroovyPlugin {
 
     output.infoln("Compiling [${filesToCompile.size()}] Java classes from [${sourceDirectory}] to [${buildDirectory}]")
 
-    String command = "${javacPath} ${settings.compilerArguments} ${classpath(dependencies, additionalClasspath)} -sourcepath ${sourceDirectory} -d ${buildDirectory} ${filesToCompile.join(" ")}"
+    String command = "${javacPath} ${settings.compilerArguments} ${classpath(dependencies, settings.libraryDirectories, additionalClasspath)} -sourcepath ${sourceDirectory} -d ${buildDirectory} ${filesToCompile.join(" ")}"
     output.debugln("Executing compiler command [%s]", command)
 
     Files.createDirectories(resolvedBuildDir)
@@ -267,10 +267,23 @@ class JavaPlugin extends BaseGroovyPlugin {
     }
   }
 
-  private String classpath(List<Map<String, Object>> dependenciesList, Path... additionalPaths) {
+  private String classpath(List<Map<String, Object>> dependenciesList, List<Path> libraryDirectories, Path... additionalPaths) {
+    List<Path> additionalJARs = new ArrayList<>()
+    if (libraryDirectories != null) {
+      libraryDirectories.each { path ->
+        Path dir = project.directory.resolve(FileTools.toPath(path))
+        if (!Files.isDirectory(dir)) {
+          return
+        }
+
+        Files.list(dir).filter(FileTools.extensionFilter(".jar")).forEach { file -> additionalJARs.add(file.toAbsolutePath()) }
+      }
+    }
+
     return dependencyPlugin.classpath {
       dependenciesList.each { deps -> dependencies(deps) }
       additionalPaths.each { additionalPath -> path(location: additionalPath) }
+      additionalJARs.each { additionalJAR -> path(location: additionalJAR) }
     }.toString("-classpath ")
   }
 

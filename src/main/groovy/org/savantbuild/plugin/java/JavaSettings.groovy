@@ -36,6 +36,11 @@ class JavaSettings {
   String docArguments = ""
 
   /**
+   * Additional directories that contain JAR files to include in the compilation classpath. Defaults to {@code []}.
+   */
+  List<Object> libraryDirectories = []
+
+  /**
    * The list of dependencies to include on the classpath when javac is called to compile the main Java source files.
    * This defaults to:
    * <p>
