@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Inversoft Inc., All Rights Reserved
+ * Copyright (c) 2014-2018, Inversoft Inc., All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,7 @@ class JavaPluginTest {
     )
 
     JavaPlugin plugin = new JavaPlugin(project, new RuntimeConfiguration(), output)
-    plugin.settings.javaVersion = "1.6"
+    plugin.settings.javaVersion = "1.8"
     plugin.settings.libraryDirectories.add("lib")
 
     plugin.clean()
@@ -142,7 +142,7 @@ class JavaPluginTest {
     byte[] buf = new byte[1024];
     int length;
     while ((length = jis.read(buf)) != -1) {
-      baos.write(buf, 0, length);
+      baos.write(buf, 0, length)
     }
 
     println Files.getLastModifiedTime(original)
