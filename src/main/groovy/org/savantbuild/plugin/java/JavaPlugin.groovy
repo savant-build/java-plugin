@@ -175,6 +175,23 @@ class JavaPlugin extends BaseGroovyPlugin {
   }
 
   /**
+   * Returns the main classpath for the project
+   * <p>
+   * Here is an example of calling this method:
+   * <p>
+   * <pre>
+   *   java.getMainClasspath()
+   * </pre>
+   */
+  String getMainClasspath() {
+    return classpath([
+        [group: "compile", transitive: true, fetchSource: false, transitiveGroups: ["compile", "runtime", "provided"]],
+        [group: "runtime", transitive: true, fetchSource: false, transitiveGroups: ["compile", "runtime", "provided"]],
+        [group: "provided", transitive: true, fetchSource: false, transitiveGroups: ["compile", "runtime", "provided"]],
+    ], settings.libraryDirectories, layout.mainBuildDirectory)
+  }
+
+  /**
    * Compiles an arbitrary source directory to an arbitrary build directory.
    * <p>
    * Here is an example of calling this method:
