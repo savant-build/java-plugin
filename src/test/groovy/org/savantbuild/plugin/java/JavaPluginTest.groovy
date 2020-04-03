@@ -119,6 +119,9 @@ class JavaPluginTest {
 
     plugin.document()
     assertTrue(Files.isRegularFile(projectDir.resolve("test-project/build/doc/index.html")))
+
+    // Smokescreen
+    plugin.getMainClasspath()
   }
 
   private static void assertJarContains(Path jarFile, String... entries) {
