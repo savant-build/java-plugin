@@ -55,7 +55,7 @@ class JavaPluginTest {
   public static Path projectDir
 
   @BeforeSuite
-  public void beforeSuite() {
+  void beforeSuite() {
     println "Setup"
     projectDir = Paths.get("")
     if (!Files.isRegularFile(projectDir.resolve("LICENSE"))) {
@@ -64,7 +64,7 @@ class JavaPluginTest {
   }
 
   @Test
-  public void all() throws Exception {
+  void all() throws Exception {
     println "Start"
     FileTools.prune(projectDir.resolve("build/cache"))
 
@@ -89,7 +89,7 @@ class JavaPluginTest {
     )
 
     JavaPlugin plugin = new JavaPlugin(project, new RuntimeConfiguration(), output)
-    plugin.settings.javaVersion = "1.8"
+    plugin.settings.javaVersion = "14"
     plugin.settings.libraryDirectories.add("lib")
 
     plugin.clean()
@@ -120,8 +120,8 @@ class JavaPluginTest {
     plugin.document()
     assertTrue(Files.isRegularFile(projectDir.resolve("test-project/build/doc/index.html")))
 
-    // Smokescreen
-    plugin.getMainClasspath()
+    // Smokescreen (Calls getMainClasspath)
+    plugin.printJDKModuleDeps()
   }
 
   private static void assertJarContains(Path jarFile, String... entries) {
@@ -131,27 +131,27 @@ class JavaPluginTest {
   }
 
   private static void assertJarFileEquals(Path jarFile, String entry, Path original) throws IOException {
-    JarInputStream jis = new JarInputStream(Files.newInputStream(jarFile));
-    JarEntry jarEntry = jis.getNextJarEntry();
+    JarInputStream jis = new JarInputStream(Files.newInputStream(jarFile))
+    JarEntry jarEntry = jis.getNextJarEntry()
     while (jarEntry != null && !jarEntry.getName().equals(entry)) {
-      jarEntry = jis.getNextJarEntry();
+      jarEntry = jis.getNextJarEntry()
     }
 
     if (jarEntry == null) {
-      fail("Jar [" + jarFile + "] is missing entry [" + entry + "]");
+      fail("Jar [" + jarFile + "] is missing entry [" + entry + "]")
     }
 
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    byte[] buf = new byte[1024];
-    int length;
+    ByteArrayOutputStream baos = new ByteArrayOutputStream()
+    byte[] buf = new byte[1024]
+    int length
     while ((length = jis.read(buf)) != -1) {
       baos.write(buf, 0, length)
     }
 
     println Files.getLastModifiedTime(original)
-    assertEquals(Files.readAllBytes(original), baos.toByteArray());
-    assertEquals(jarEntry.getSize(), Files.size(original));
-    assertEquals(jarEntry.getCreationTime(), Files.getAttribute(original, "creationTime"));
+    assertEquals(Files.readAllBytes(original), baos.toByteArray())
+    assertEquals(jarEntry.getSize(), Files.size(original))
+    assertEquals(jarEntry.getCreationTime(), Files.getAttribute(original, "creationTime"))
 //    assertEquals(jarEntry.getLastModifiedTime(), Files.getLastModifiedTime(original));
 //    assertEquals(jarEntry.getTime(), Files.getLastModifiedTime(original).toMillis());
   }

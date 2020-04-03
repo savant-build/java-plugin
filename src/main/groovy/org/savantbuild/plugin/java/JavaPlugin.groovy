@@ -191,6 +191,16 @@ class JavaPlugin extends BaseGroovyPlugin {
     ], settings.libraryDirectories, layout.mainBuildDirectory)
   }
 
+  void printJDKModuleDeps() {
+    def jdeps = "${properties.get(settings.javaVersion)}/bin/jdeps"
+
+    output.debugln("Running [${jdeps} --print-module-deps --recursive --ignore-missing-deps --multi-release ${settings.javaVersion} ${getMainClasspath()} ${project.directory}/build/jars/${project.name}-${project.version}.jar]")
+
+    def proc = "${jdeps} --print-module-deps --recursive --ignore-missing-deps --multi-release ${settings.javaVersion} ${getMainClasspath()} ${project.directory}/build/jars/${project.name}-${project.version}.jar".execute()
+    proc.consumeProcessOutput(System.out, System.err)
+    proc.waitFor()
+  }
+
   /**
    * Compiles an arbitrary source directory to an arbitrary build directory.
    * <p>
