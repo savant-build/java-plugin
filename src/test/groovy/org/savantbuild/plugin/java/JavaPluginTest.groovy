@@ -67,7 +67,9 @@ class JavaPluginTest {
   @Test
   void all() throws Exception {
     println "Start"
-    FileTools.prune(projectDir.resolve("build/cache"))
+
+    def cacheDir = projectDir.resolve("build/cache")
+    FileTools.prune(cacheDir)
 
     Output output = new SystemOutOutput(true)
     output.enableDebug()
@@ -81,11 +83,11 @@ class JavaPluginTest {
     project.dependencies = new Dependencies(new DependencyGroup("test-compile", false, new Artifact("org.testng:testng:6.8.7:jar")))
     project.workflow = new Workflow(
         new FetchWorkflow(output,
-            new CacheProcess(output, projectDir.resolve("build/cache").toString()),
+            new CacheProcess(output, cacheDir.toString(), cacheDir.toString()),
             new URLProcess(output, "https://repository.savantbuild.org", null, null)
         ),
         new PublishWorkflow(
-            new CacheProcess(output, projectDir.resolve("build/cache").toString())
+            new CacheProcess(output, cacheDir.toString(), cacheDir.toString())
         ),
         output
     )
