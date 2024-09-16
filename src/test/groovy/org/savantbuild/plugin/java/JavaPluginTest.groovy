@@ -95,6 +95,9 @@ class JavaPluginTest {
     plugin.settings.javaVersion = "17"
     plugin.settings.libraryDirectories.add("lib")
 
+    assertTrue(Paths.get(plugin.javaHome, "bin", "java").toFile().exists(),
+        "Expected javaHome getter to return the directory containing bin/java")
+
     plugin.clean()
     assertFalse(Files.isDirectory(projectDir.resolve("test-project/build")))
 
