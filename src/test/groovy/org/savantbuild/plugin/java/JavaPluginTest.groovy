@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018, Inversoft Inc., All Rights Reserved
+ * Copyright (c) 2014-2024, Inversoft Inc., All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import org.savantbuild.dep.domain.Artifact
 import org.savantbuild.dep.domain.Dependencies
 import org.savantbuild.dep.domain.DependencyGroup
 import org.savantbuild.dep.domain.License
-
 import org.savantbuild.dep.workflow.FetchWorkflow
 import org.savantbuild.dep.workflow.PublishWorkflow
 import org.savantbuild.dep.workflow.Workflow
@@ -77,7 +76,7 @@ class JavaPluginTest {
     Project project = new Project(projectDir.resolve("test-project"), output)
     project.group = "org.savantbuild.test"
     project.name = "test-project"
-    project.version = new Version("1.0")
+    project.version = new Version("1.0.0")
     project.licenses.add(License.parse("ApacheV2_0", null))
 
     project.dependencies = new Dependencies(new DependencyGroup("test-compile", false, new Artifact("org.testng:testng:6.8.7:jar")))
@@ -93,8 +92,11 @@ class JavaPluginTest {
     )
 
     JavaPlugin plugin = new JavaPlugin(project, new RuntimeConfiguration(), output)
-    plugin.settings.javaVersion = "14"
+    plugin.settings.javaVersion = "17"
     plugin.settings.libraryDirectories.add("lib")
+
+    assertTrue(Paths.get(plugin.javaHome, "bin", "java").toFile().exists(),
+        "Expected javaHome getter to return the directory containing bin/java")
 
     plugin.clean()
     assertFalse(Files.isDirectory(projectDir.resolve("test-project/build")))
@@ -154,7 +156,7 @@ class JavaPluginTest {
 
     println Files.getLastModifiedTime(original)
     assertEquals(Files.readAllBytes(original), baos.toByteArray())
-    assertEquals(jarEntry.getSize(), Files.size(original))
+    assertEquals((long) jarEntry.getSize(), (long) Files.size(original))
     assertEquals(jarEntry.getCreationTime(), Files.getAttribute(original, "creationTime"))
 //    assertEquals(jarEntry.getLastModifiedTime(), Files.getLastModifiedTime(original));
 //    assertEquals(jarEntry.getTime(), Files.getLastModifiedTime(original).toMillis());

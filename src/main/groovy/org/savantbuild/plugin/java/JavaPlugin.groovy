@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Inversoft Inc., All Rights Reserved
+ * Copyright (c) 2013-2024, Inversoft Inc., All Rights Reserved
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -314,6 +314,10 @@ class JavaPlugin extends BaseGroovyPlugin {
     }.toString("-classpath ")
   }
 
+  String getJavaHome() {
+    properties.getProperty(settings.javaVersion)
+  }
+
   private void initialize() {
     if (javacPath) {
       return
@@ -324,7 +328,7 @@ class JavaPlugin extends BaseGroovyPlugin {
           "  java.settings.javaVersion=\"1.7\"")
     }
 
-    String javaHome = properties.getProperty(settings.javaVersion)
+    String javaHome = getJavaHome()
     if (!javaHome) {
       fail("No JDK is configured for version [%s].\n\n[%s]", settings.javaVersion, ERROR_MESSAGE)
     }
