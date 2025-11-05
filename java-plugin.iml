@@ -235,6 +235,15 @@
     <orderEntry type="module" module-name="savant-dependency-management" scope="PROVIDED" />
     <orderEntry type="module" module-name="savant-utils" scope="PROVIDED" />
     <orderEntry type="module" module-name="savant-version" scope="PROVIDED" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/.savant/cache/com/tonicsystems/jarjar/1.4.0/jarjar-1.4.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
     <orderEntry type="module" module-name="dependency-plugin" />
     <orderEntry type="module" module-name="file-plugin" />
     <orderEntry type="module" module-name="savant-io" />

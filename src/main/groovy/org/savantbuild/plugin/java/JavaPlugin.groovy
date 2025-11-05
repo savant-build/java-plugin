@@ -27,10 +27,13 @@ import org.savantbuild.domain.Project
 import org.savantbuild.io.FileSet
 import org.savantbuild.io.FileTools
 import org.savantbuild.output.Output
+import org.savantbuild.parser.groovy.GroovyTools
 import org.savantbuild.plugin.dep.DependencyPlugin
 import org.savantbuild.plugin.file.FilePlugin
 import org.savantbuild.plugin.groovy.BaseGroovyPlugin
 import org.savantbuild.runtime.RuntimeConfiguration
+
+import com.tonicsystems.jarjar.Main
 
 /**
  * The Java plugin. The public methods on this class define the features of the plugin.
@@ -172,6 +175,80 @@ class JavaPlugin extends BaseGroovyPlugin {
     jarInternal(project.toArtifact().getArtifactSourceFile(), layout.mainSourceDirectory, layout.mainResourceDirectory)
     jarInternal(project.toArtifact().getArtifactTestFile(), layout.testBuildDirectory)
     jarInternal(project.toArtifact().getArtifactTestSourceFile(), layout.testSourceDirectory, layout.testResourceDirectory)
+  }
+
+  void jarjar(Map<String, Object> attributes, @DelegatesTo(JarJarDelegate.class) Closure closure) {
+    if (!GroovyTools.attributesValid(attributes, ["dependencyGroup", "operation", "outputDirectory"],
+        ["dependencyGroup"],
+        ["dependencyGroup": String.class, "operation": String.class, "outputDirectory": String.class])) {
+      fail("You must supply the name of the dependency group like this:\n\n" +
+          "  java.jarjar(dependencyGroup: \"nasty-deps\", outputDirectory: \"build/classes/main\")")
+    }
+
+    GroovyTools.putDefaults(attributes, ["outputDirectory": "build/classes/main"])
+
+    String dependencyGroup = attributes["dependencyGroup"].toString()
+    Path outputDirectory = FileTools.toPath(attributes["outputDirectory"])
+
+    JarJarDelegate delegate = new JarJarDelegate()
+    closure.delegate = delegate
+    closure.resolveStrategy = Closure.DELEGATE_FIRST
+    closure()
+
+    Path rulesFile = delegate.buildRulesFile()
+    if (rulesFile == null) {
+      fail("You must supply rules as nested elements of the JarJar method like this::\n\n" +
+          "  java.jarjar(dependencyGroup: \"nasty-deps\", outputDirectory: \"build/classes/main\") {\n" +
+          "    rule(from: \"foo\", to: \"bar\"\n" +
+          "   }\n")
+    }
+
+    // Step 1 - copy all the dependencies in the group to a temp dir
+    Path depsTempDir = Files.createTempDirectory("jarjar-deps")
+    dependencyPlugin.copy(to: depsTempDir) {
+      dependencies(group: dependencyGroup, transitive: true, fetchSource: true, transitiveGroups: ["compile", "runtime"])
+    }
+
+    // Step 2 - explode all the JARs into another temp directory
+    Path explosionTempDir = Files.createTempDirectory("jarjar-explosion")
+    Files.list(depsTempDir).forEach { file ->
+      if (Files.isRegularFile(file) && file.toString().endsWith(".jar")) {
+        filePlugin.unjar(file: file, to: explosionTempDir)
+      }
+    }
+
+    // Step 3 - remove the META-INF files that mess things up
+    filePlugin.delete {
+      fileSet(dir: explosionTempDir.resolve("META-INF"), includePatterns: [~/MANIFEST.MF/, ~/.*DSA/, ~/.*SF/])
+    }
+
+    // Step 4 - build an intermediate JAR that contains everything from the dependency JARs in their original packages
+    Path intermediateTempDir = Files.createTempDirectory("jarjar-intermediate")
+    Path intermediateJar = intermediateTempDir.resolve("intermediate.jar")
+    filePlugin.mkdir(dir: intermediateTempDir)
+    filePlugin.jar(file: intermediateJar) {
+      fileSet(dir: explosionTempDir)
+    }
+
+    // Step 5 - run JarJar to repackage things (shade)
+    output.infoln("Running JarJar")
+    Path processedJar = intermediateTempDir.resolve("processed.jar")
+    Main.main("process", rulesFile.toAbsolutePath().toString(), intermediateJar.toString(), processedJar.toString())
+    output.infoln("JarJar completed successfully")
+
+    // Step 6 - explode the JarJar output JAR into the classes directory used by Savant. This will be added to the JAR file for the project
+    filePlugin.mkdir(dir: outputDirectory)
+    filePlugin.unjar(file: processedJar.toString(), to: outputDirectory)
+
+    // Step 7 - once again, remove the META-INF files that we don't need but this time from the classes directory since this is where we build the project JAR from
+    filePlugin.delete {
+      fileSet(dir: outputDirectory.resolve("META-INF"), includePatterns: [~/MANIFEST.MF/, ~/.*DSA/, ~/.*SF/])
+    }
+
+    // Clean up
+    FileTools.prune(depsTempDir)
+    FileTools.prune(intermediateTempDir)
+    Files.deleteIfExists(rulesFile)
   }
 
   /**

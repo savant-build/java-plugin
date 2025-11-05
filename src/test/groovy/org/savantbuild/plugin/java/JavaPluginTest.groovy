@@ -130,6 +130,50 @@ class JavaPluginTest {
     plugin.printJDKModuleDeps()
   }
 
+  @Test
+  void jarjar() {
+    def cacheDir = projectDir.resolve("build/cache")
+    FileTools.prune(cacheDir)
+
+    Output output = new SystemOutOutput(true)
+    output.enableDebug()
+
+    Project project = new Project(projectDir.resolve("test-project"), output)
+    project.group = "org.savantbuild.test"
+    project.name = "test-project"
+    project.version = new Version("1.0.0")
+    project.licenses.add(License.parse("ApacheV2_0", null))
+
+    project.dependencies = new Dependencies(new DependencyGroup("jarjar", false, new Artifact("com.amazonaws:aws-java-sdk-ec2:1.12.243:jar")))
+    project.workflow = new Workflow(
+        new FetchWorkflow(output,
+            new CacheProcess(output, cacheDir.toString(), cacheDir.toString()),
+            new URLProcess(output, "https://repository.savantbuild.org", null, null)
+        ),
+        new PublishWorkflow(
+            new CacheProcess(output, cacheDir.toString(), cacheDir.toString())
+        ),
+        output
+    )
+
+    JavaPlugin plugin = new JavaPlugin(project, new RuntimeConfiguration(), output)
+    plugin.clean()
+    plugin.jarjar(dependencyGroup: "jarjar", outputDirectory: "build/classes/main") {
+      rule(from: "org.**", to: "shaded.org.@1")
+      rule(from: "com.fasterxml.**", to: "shaded.com.fasterxml.@1")
+    }
+
+    assertTrue(Files.isDirectory(projectDir.resolve("test-project/build/classes/main/com/amazonaws")))
+    assertTrue(Files.isDirectory(projectDir.resolve("test-project/build/classes/main/shaded/com/fasterxml")))
+    assertTrue(Files.isDirectory(projectDir.resolve("test-project/build/classes/main/shaded/org/apache")))
+    assertTrue(Files.isDirectory(projectDir.resolve("test-project/build/classes/main/shaded/org/joda")))
+
+    // Make sure they were shaded
+    assertFalse(Files.isDirectory(projectDir.resolve("test-project/build/classes/main/com/fasterxml")))
+    assertFalse(Files.isDirectory(projectDir.resolve("test-project/build/classes/main/org/apache")))
+    assertFalse(Files.isDirectory(projectDir.resolve("test-project/build/classes/main/org/joda")))
+  }
+
   private static void assertJarContains(Path jarFile, String... entries) {
     JarFile jf = new JarFile(jarFile.toFile())
     entries.each({ entry -> assertNotNull(jf.getEntry(entry), "Jar [${jarFile}] is missing entry [${entry}]") })
